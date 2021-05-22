@@ -1,4 +1,6 @@
 class PostsController < ApplicationController
+  before_action :set_post, only: [:show]
+
 
   rescue_from Exception do |e|
     render json: {error: e.message}, status: :internal_error
@@ -8,10 +10,13 @@ class PostsController < ApplicationController
     render json: {error: e.message}, status: :unprocessable_entity
   end
 
-  before_action :set_post, only: [:show]
   def index
     @posts = Post.where(published: true)
-    render json: @posts, status: :ok
+    if !params[:search].nil? && params[:search].present?
+      
+      @posts = @posts.where("title like '%#{params[:search]}%'")
+    end
+    render json: @posts.includes(:user), status: :ok
   end
 
   def show
@@ -27,7 +32,6 @@ class PostsController < ApplicationController
     @post = Post.find(params[:id])
     @post.update!(post_params)
     render json: @post, status: :ok
-      
   end
   
   private

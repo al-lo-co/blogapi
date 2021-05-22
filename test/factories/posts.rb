@@ -2,7 +2,7 @@ FactoryBot.define do
   factory :post do
     title { Faker::Lorem.sentence }
     content { Faker::Lorem.paragraph }
-    published { false 
+    published { 
       r = rand(0..1)
       if r == 0
         false
@@ -11,6 +11,13 @@ FactoryBot.define do
       end
     
     }
+    user
+  end
+
+  factory :published_post, class: 'post' do
+    title { Faker::Lorem.sentence }
+    content { Faker::Lorem.paragraph }
+    published { true }
     user
   end
 end
