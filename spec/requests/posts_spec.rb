@@ -29,7 +29,7 @@ RSpec.describe "Post endpoint", type: :request do
 
   describe 'GET /posts/{id}' do
 
-    let!(:post){create(:post)}
+    let!(:post){create(:post, published: true)}
     
     it "should return a specific post" do
       get "/posts/#{post.id}"
@@ -62,7 +62,7 @@ RSpec.describe "Post endpoint", type: :request do
     end
   end
 
-
+=begin
   describe 'Post /posts/' do
 
     let!(:article){create(:post)}
@@ -144,4 +144,5 @@ RSpec.describe "Post endpoint", type: :request do
     end
 
   end
+=end
 end

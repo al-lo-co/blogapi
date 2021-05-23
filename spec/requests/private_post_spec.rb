@@ -1,22 +1,25 @@
 require 'rails_helper'
 
 RSpec.describe "Posts with auth", type: :request do
-  let!(:user1){create(:user)}
-  let!(:user2){create(:user)}
-  let!(:post1){create(:post, user_id: user1.id)}
-  let!(:post2){create(:post, user_id: user2.id, published: true)}
-  let!(:post3){create(:post, user_id: user2.id, published: false)}
-  let!(:auth_headers1){{'Authorization' => "Bearer #{user1.auth_token}"}}
-  let!(:auth_headers2){{'Authorization' => "Bearer #{user2.auth_token}"}}
+  let!(:user_a){create(:user)}
+  let!(:user_b){create(:user)}
+  let!(:post_a){create(:post, user_id: user_a.id)}
+  let!(:post_b){create(:post, user_id: user_b.id, published: true)}
+  let!(:post_c){create(:post, user_id: user_b.id, published: false)}
+  let!(:auth_headers_a){{'Authorization' => "Bearer #{user_a.auth_token}"}}
+  let!(:auth_headers_b){{'Authorization' => "Bearer #{user_b.auth_token}"}}
+  let!(:create_params){ {"post" => {"title" => "title",  "content" => "content", "published" => true }} }
+  let!(:update_params){ {"post" => {"title" => "title",  "content" => "content", "published" => true }} }
+
 
   describe "Get auth posts" do
     context 'Should return ok' do
-      context "when requisitin others author post" do
+      context "when requisiting others author post" do
         context "when post is public" do
-          before {get "/posts/#{post2.id}", headers: auth_headers1}
+          before { get "/posts/#{post_b.id}", headers: auth_headers_a}
           #payload
           context "response" do
-            subject { JSON.parse(response.body) } 
+            subject { payload } 
             it { is_expected.to include(:id) }
           end
            #response
@@ -26,10 +29,10 @@ RSpec.describe "Posts with auth", type: :request do
           end 
         end
         context "when post is draft" do
-          before {get "/posts/#{post3.id}", headers: auth_headers1}
+          before {get "/posts/#{post_c.id}", headers: auth_headers_a}
           #payload
           context "response" do
-            subject { JSON.parse(response.body) } 
+            subject { payload } 
             it { is_expected.to include(:error) }
           end
            #response
@@ -46,15 +49,71 @@ RSpec.describe "Posts with auth", type: :request do
     end
   end
 
-  describe "Get auth posts" do
-    it 'Should return ok' do
-      
-    end
+  describe "Get auth posts created" do
+    context 'With valid auth' do
+      before {post "/posts", params: create_params, headers: auth_headers_a}
+        #payload
+        context "response" do
+          subject { payload } 
+          it { is_expected.to include(:id, :content, :published, :author) }
+        end
+          #response
+        context "response" do
+          subject { response } 
+          it { is_expected.to have_http_status(:created) }
+        end
+      end
+      context 'Without valid auth' do
+        before {post "/posts", params: create_params}
+        #payload
+        context "response" do
+          subject { payload } 
+          it { is_expected.to include(:error) }
+        end
+          #response
+        context "response" do
+          subject { response } 
+          it { is_expected.to have_http_status(:unauthorized) }
+        end
+      end
   end
 
-  describe "Get auth posts" do
-    it 'Should return ok' do
-      
+  describe "Get auth posts update" do
+    context 'With valid auth' do
+      before {put "/posts/#{post_a.id}", params: update_params, headers: auth_headers_a}
+        #payload
+      context "payload" do
+        subject { payload } 
+        it { is_expected.to include(:id, :content, :published, :author) }
+        it { expect(payload[:id]).to eq(post_a.id) }
+      end
+        #response
+      context "response" do
+        subject { response } 
+        it { is_expected.to have_http_status(:ok) }
+      end
     end
+
+    context 'With valid auth other user post' do
+      before {put "/posts/#{post_b.id}", params: update_params, headers: auth_headers_a}
+        #payload
+      context "payload" do
+        subject { payload } 
+        it { is_expected.to include(:error) }
+      end
+        #response
+      context "response" do
+        subject { response } 
+        it { is_expected.to have_http_status(:not_found) }
+      end
+    end
+
+    
+    
+  end
+
+  private
+  def payload
+    JSON.parse(response.body).with_indifferent_access
   end
 end
