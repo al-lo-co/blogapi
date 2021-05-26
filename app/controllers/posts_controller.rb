@@ -1,5 +1,6 @@
 class PostsController < ApplicationController
   include Secured
+
   before_action :set_post, only: [:show]
   before_action :auth_user!, only: [:update, :create]
 
@@ -20,8 +21,10 @@ class PostsController < ApplicationController
     @posts = Post.where(published: true)
     if !params[:search].nil? && params[:search].present?
       
-      @posts = @posts.where("title like '%#{params[:search]}%'")
+      @posts = PostsSearchService.search(@posts, params[:search])
+      
     end
+
     render json: @posts.includes(:user), status: :ok
   end
 
